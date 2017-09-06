@@ -1,0 +1,15 @@
+# Emacs junk
+*~
+#*#
+
+# Sensitive credentials
+config.json
+
+# data files
+models
+w2v
+corrected.csv
+
+# python junk
+
+__pycache__

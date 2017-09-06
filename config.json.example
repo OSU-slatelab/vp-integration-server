@@ -1,0 +1,17 @@
+{
+    "db_user":"vp_mysql_user",
+    "db_pass":"vp_mysql_user_pass",
+    "db_db":"mysql_db_name",
+    "db_host":"localhost",
+    "db_port":"3306",
+    "char_cnn_dir":"/path/to/saved/char_cnn/model_dir/",
+    "word_cnn_dir":"/path/to/saved/word_cnn/model_dir/",
+    "choose_cnn_dir":"/path/to/saved/word_cnn_ensemble_choice/model_dir/",
+    "cs_cnn_vectorizer":"/path/to/saved/word/vectorizer.pkl",
+    "cs_cnn_classifier":"/path/to/logistic/regression/cs_vs_cnn_choice/classifier.pkl",
+    "cs_host":"127.0.0.1",
+    "cs_port":1024,
+    "cs_bufsize":4096,
+    "service_host":"",
+    "service_port":5000
+}
