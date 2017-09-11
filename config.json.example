@@ -13,5 +13,7 @@
     "cs_port":1024,
     "cs_bufsize":4096,
     "service_host":"",
-    "service_port":5000
+    "service_port":5000,
+    "service_key":null,
+    "service_cert":null
 }

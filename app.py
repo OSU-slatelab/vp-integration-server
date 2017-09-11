@@ -368,7 +368,14 @@ def new_query(convo_num):
           
     
 if __name__ == "__main__":
-    http = WSGIServer((conf['service_host'], conf['service_port']), app.wsgi_app)
+    if conf['service_key'] is not None:
+        http = WSGIServer((conf['service_host'], conf['service_port']),
+                          app.wsgi_app,
+                          keyfile=conf['service_key'],
+                          certfile=conf['service_cert'])
+    else:
+        http = WSGIServer((conf['service_host'], conf['service_port']),
+                          app.wsgi_app)        
     try:
         http.serve_forever()
     except KeyboardInterrupt:
