@@ -1,0 +1,14 @@
+[Unit]
+Description=Virtual Patient back-end integration service
+Requires=mariadb.service
+After=mariadb.service
+After=network.target
+
+[Service]
+Type=simple
+# ExecStart should use a python installation with all proper dependencies installed.
+ExecStart=python app.py
+User=root
+
+[Install]
+WantedBy=multi-user.target
