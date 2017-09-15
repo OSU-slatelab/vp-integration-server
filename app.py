@@ -1,5 +1,6 @@
 from flask import Flask, request, redirect, url_for, Response
 from flask_mysqldb import MySQL
+from flask_cors import CORS
 
 import vpcnn.model
 import vpcnn.vpdataset 
@@ -53,6 +54,7 @@ app.config['MYSQL_PASSWORD'] = conf['db_pass']
 app.config['MYSQL_DB'] = conf['db_db']
 app.config['MYSQL_HOST'] = conf['db_host']
 db = MySQL(app)
+CORS(app)
 
 print("Building vocabularies...")
 word_tokenizer = data.Pipeline(vpcnn.vpdataset.clean_str)
