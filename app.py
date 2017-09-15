@@ -201,9 +201,12 @@ def process_vars(line):
 def process_match(why):
     #print(why)
     match = extract_interp_re.search(why)
-    raw = match.group(1).strip()
-    processed = process_vars(raw)
-    return processed
+    if match:
+        raw = match.group(1).strip()
+        processed = process_vars(raw)
+        return processed
+    else:
+        return "!!did not extract template!!"
     
 
 ## TODO: exception on broken connections?
@@ -237,6 +240,7 @@ def conversations():
                      VALUES (%(client)s, %(first)s, %(last)s, 1, %(input)s, %(mic)s);'''
         num_sql = '''SELECT LAST_INSERT_ID();'''
         cursor = db.connection.cursor()
+        error = False
         try:
             
             cursor.execute(ins_sql, inputs)
@@ -244,10 +248,32 @@ def conversations():
             cursor.execute(num_sql)
             convo_num = cursor.fetchone()[0]
         except:
+            error = True
             db.connection.rollback()
         cursor.close()
-        ## TODO post initial null message
-        return redirect(url_for('show_conversation', num=convo_num))
+        cs_greeting = cs_exchange(inputs['first'], inputs['last'], 1, "")
+        response_dict = {}
+        status = 201
+        headers = {}
+        if not error:
+            headers['location'] = "/conversations/" + str(convo_num) + "/"
+            response_dict['status'] = 'ok'
+            response_dict['resource'] = url_for('show_conversation', num=convo_num)
+            response_dict['conversation_num'] = convo_num
+            response_dict['greeting'] = cs_greeting
+        else:
+            status = 500
+            response_dict['status'] = 'error'
+            response_dict['resource'] = ''
+            response_dict['conversation_num'] = ''
+            response_dict['greeting'] = ''
+
+        response_str = json.dumps(response_dict, indent=2) + "\n"
+        response = Response(response = response_str,
+                            status = status,
+                            headers = headers,
+                            mimetype = 'application/json')
+        return response
 
 @app.route("/conversations/<int:num>/")
 def show_conversation(num):
@@ -283,17 +309,17 @@ def new_query(convo_num):
         ##      error if db fails
         ##      error if conversation does not exist
 
+        error = False
         usr_first = ""
         usr_last = ""
         last_qnum = 0
-        
         usr_sql = '''SELECT First_name, Last_name, MAX(Query_num)
                      FROM Conversations JOIN Queries
                      ON Conversations.Convo_num = Queries.Convo_num
                      WHERE Conversations.Convo_num = %s;'''
         cursor = db.connection.cursor()
         try:
-            cursor.execute(usr_sql, str(convo_num))
+            cursor.execute(usr_sql, [str(convo_num)])
             record = cursor.fetchone()
             usr_first = record[0]
             usr_last = record[1]
@@ -301,9 +327,11 @@ def new_query(convo_num):
                 last_qnum = int(record[2])
             else:
                 last_qnum = 0
-        except:
+        except BaseException as e:
             ## TODO: needs work
-            return "Error connecting to database"
+            error = True
+            print(str(e))
+            return ("Error connecting to database", 500)
 
         # IMPORTANT NOTE!!! this (new_qnum) is how uniqueness of query keys is maintained in the DB.
         # I'm sure this is a bad idea somehow, but that's how it's happening now.
@@ -312,11 +340,13 @@ def new_query(convo_num):
         ## ask ChatScript
         cs_init_reply = cs_exchange(usr_first, usr_last, 1, inputs['query'])
         why = cs_exchange(usr_first, usr_last, 1, ":why")
+        #print(why)
         cs_interp = process_match(why)
         if cs_interp != '_*':
             # NOTE! This is a hack to get around CS limitations; the logistic
             # regression model mostly only uses this feature to know whether or
-            # not CS hit. 
+            # not CS hit. This should be the log probability of the CS interpretation
+            # under the CNN model.
             cs_logprob = log10(0.9) 
         else:
             cs_logprob = None
@@ -361,10 +391,32 @@ def new_query(convo_num):
             cursor.execute(ins_sql, ins_data)
             db.connection.commit()
         except:
-            
+            error = True
             db.connection.rollback()
         cursor.close()
-        return reply #redirect(url_for('show_conversation', num=convo_num))
+        response_dict = {}
+        status = 201
+        headers = {}
+        if not error:
+            headers['location'] = "/conversations/" + str(convo_num) + "/query/" + str(new_qnum) + "/"
+            response_dict['status'] = 'ok'
+            response_dict['resource'] = url_for('show_conversation', num=convo_num) + "query/" + str(new_qnum) + "/" ##FIXME (implement GET)
+            #response_dict['conversation_num'] = convo_num
+            response_dict['reply'] = reply
+        else:
+            status = 500
+            response_dict['status'] = 'error'
+            response_dict['resource'] = ''
+            #response_dict['conversation_num'] = ''
+            response_dict['reply'] = ''
+
+        response_str = json.dumps(response_dict, indent=2) + "\n"
+        response = Response(response = response_str,
+                            status = status,
+                            headers = headers,
+                            mimetype = 'application/json')
+
+        return response #redirect(url_for('show_conversation', num=convo_num))
           
     
 if __name__ == "__main__":
