@@ -340,7 +340,8 @@ def new_query(convo_num):
         new_qnum = last_qnum + 1 
         inputs = request.get_json()
         ## ask ChatScript
-        cs_init_reply = cs_exchange(usr_first, usr_last, 1, inputs['query'])
+        to_cs = "[ q: " + str(new_qnum) + " ] " + inputs['query']
+        cs_init_reply = cs_exchange(usr_first, usr_last, 1, to_cs)
         why = cs_exchange(usr_first, usr_last, 1, ":why")
         #print(why)
         cs_interp = process_match(why)
@@ -370,7 +371,7 @@ def new_query(convo_num):
         #print(use_cnn)
         cs_re_reply = "NULL"
         if use_cnn:
-            new_query = ":retry " + cnn_interp
+            new_query = "[ q: " + str(new_qnum) + " ] " + cnn_interp
             cs_re_reply = cs_exchange(usr_first, usr_last, 1, new_query)
             reply = cs_re_reply
         else:
