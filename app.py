@@ -357,14 +357,14 @@ def new_query(convo_num):
         ## ask ChatScript
         to_cs = "[ q: " + str(new_qnum) + " ] " + inputs['query']
         cs_init_reply = cs_exchange(usr_first, usr_last, 1, to_cs)
-        if "score me" in inputs['query'] and cs_init_reply is not None:
-            response_dict = {}
-            response_dict['status'] = 'ok'
-            response_str = json.dumps(response_dict, indent=2) + "\n"
-            response = Response(response = response_str,
-                                status = 201,
-                                mimetype = 'application/json')
-            return (response)
+#        if "score me" in inputs['query'] and cs_init_reply is not None:
+#            response_dict = {}
+#            response_dict['status'] = 'ok'
+#            response_str = json.dumps(response_dict, indent=2) + "\n"
+#            response = Response(response = response_str,
+#                                status = 201,
+#                                mimetype = 'application/json')
+#            return (response)
 
         why = cs_exchange(usr_first, usr_last, 1, ":why")
         #print(why)
