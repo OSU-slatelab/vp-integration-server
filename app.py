@@ -1,4 +1,4 @@
-from flask import Flask, request, redirect, url_for, Response
+from flask import Flask, request, redirect, url_for, Response, abort
 from flask_mysqldb import MySQL
 from flask_cors import CORS
 
@@ -16,6 +16,7 @@ import glob
 import os
 import pkg_resources
 import re
+import random
 from math import log10
 from scipy.stats import entropy
 
@@ -27,6 +28,7 @@ from cs_cnn_choose import *
 
 monkey.patch_all()
 
+WS_VERSION = "1.0.0"
 CNN_Args = namedtuple('CNN_Args', ['embed_num',
                                    'char_embed_dim',
                                    'word_embed_dim',
@@ -238,8 +240,18 @@ def conversations():
         ##      error if db fails
         inputs = request.get_json()
         convo_num = -1
-        ins_sql = '''INSERT INTO Conversations (Client_ID, First_name, Last_name, Patient_choice, Input_method, Mic)
-                     VALUES (%(client)s, %(first)s, %(last)s, 1, %(input)s, %(mic)s);'''
+        inputs['ws_v'] = WS_VERSION
+        if not 'group' in inputs:
+            if conf['service_pipeline'] == 'cs_only':
+                inputs['group'] = 'control'
+            elif conf['service_pipeline'] == 'cs_cnn':
+                inputs['group'] = 'test'
+            elif conf['service_pipeline'] == 'random':
+                inputs['group'] = 'control' if random.random() < 0.5 else 'test'
+            else:
+                abort(500)
+            ins_sql = '''INSERT INTO Conversations (Client_ID, WS_Version, First_name, Last_name, Patient_choice, Input_method, Mic, Exp_group)
+                     VALUES (%(client)s, %(ws_v)s, %(first)s, %(last)s, 1, %(input)s, %(mic)s, %(group)s);'''
         num_sql = '''SELECT LAST_INSERT_ID();'''
         cursor = db.connection.cursor()
         error = False
@@ -293,6 +305,7 @@ def show_conversation(num):
         response_dict['patient'] = record[4]
         response_dict['input'] = record[5]
         response_dict['mic'] = record[6]
+        response_dict['group'] = record[7]
     except:
         ## TODO: make this better
         return 404
@@ -315,7 +328,8 @@ def new_query(convo_num):
         usr_first = ""
         usr_last = ""
         last_qnum = 0
-        usr_sql = '''SELECT First_name, Last_name, MAX(Query_num)
+        group = ""
+        usr_sql = '''SELECT First_name, Last_name, MAX(Query_num), Exp_group
                      FROM Conversations JOIN Queries
                      ON Conversations.Convo_num = Queries.Convo_num
                      WHERE Conversations.Convo_num = %s;'''
@@ -325,6 +339,7 @@ def new_query(convo_num):
             record = cursor.fetchone()
             usr_first = record[0]
             usr_last = record[1]
+            group = record[3]
             if record[2] is not None:
                 last_qnum = int(record[2])
             else:
@@ -342,41 +357,55 @@ def new_query(convo_num):
         ## ask ChatScript
         to_cs = "[ q: " + str(new_qnum) + " ] " + inputs['query']
         cs_init_reply = cs_exchange(usr_first, usr_last, 1, to_cs)
+        if "score me" in inputs['query'] and cs_init_reply is not None:
+            response_dict = {}
+            response_dict['status'] = 'ok'
+            response_str = json.dumps(response_dict, indent=2) + "\n"
+            response = Response(response = response_str,
+                                status = 201,
+                                mimetype = 'application/json')
+            return (response)
+
         why = cs_exchange(usr_first, usr_last, 1, ":why")
         #print(why)
         cs_interp = process_match(why)
-        if cs_interp != '_*':
-            # NOTE! This is a hack to get around CS limitations; the logistic
-            # regression model mostly only uses this feature to know whether or
-            # not CS hit. This should be the log probability of the CS interpretation
-            # under the CNN model.
-            cs_logprob = log10(0.9) 
-        else:
-            cs_logprob = None
-        #print(cs_interp)
-        ## ask CNN
-        probs, confs = cnn_predict(inputs['query'])
-        #print(probs.data)
-        best = best_idx(probs)
-        cnn_interp = query(best)
-        # cnn_reply = "NULL"
-        unlog = torch.exp(probs)
-        feats = compile_feats(probs.data[0][best],
-                              entropy(unlog.data[0].numpy()),
-                              confs.data[0][best],
-                              cs_logprob,
-                              cnn_interp.replace(' ', '_'))
-        #print(feats)
-        use_cnn = decider.switch_to_CNN(feats)
-        #print(use_cnn)
-        cs_re_reply = "NULL"
-        if use_cnn:
-            new_query = "[ q: " + str(new_qnum) + " ] " + cnn_interp
-            cs_re_reply = cs_exchange(usr_first, usr_last, 1, new_query)
-            reply = cs_re_reply
+        if group == 'test':
+            if cs_interp != '_*':
+                # NOTE! This is a hack to get around CS limitations; the logistic
+                # regression model mostly only uses this feature to know whether or
+                # not CS hit. This should be the log probability of the CS interpretation
+                # under the CNN model.
+                cs_logprob = log10(0.9) 
+            else:
+                cs_logprob = None
+            #print(cs_interp)
+            ## ask CNN
+            probs, confs = cnn_predict(inputs['query'])
+            #print(probs.data)
+            best = best_idx(probs)
+            cnn_interp = query(best)
+            # cnn_reply = "NULL"
+            unlog = torch.exp(probs)
+            feats = compile_feats(probs.data[0][best],
+                                  entropy(unlog.data[0].numpy()),
+                                  confs.data[0][best],
+                                  cs_logprob,
+                                  cnn_interp.replace(' ', '_'))
+            #print(feats)
+            use_cnn = decider.switch_to_CNN(feats)
+            #print(use_cnn)
+            cs_re_reply = "NULL"
+            if use_cnn:
+                new_query = "[ q: " + str(new_qnum) + " ] " + cnn_interp
+                cs_re_reply = cs_exchange(usr_first, usr_last, 1, new_query)
+                reply = cs_re_reply
+            else:
+                reply = cs_init_reply
         else:
             reply = cs_init_reply
-
+            use_cnn = False
+            cnn_interp = None
+            cs_re_reply = None
         ## set SQL input values
         ins_data = {}
         ins_data['convo_num'] = convo_num
