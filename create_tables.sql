@@ -1,11 +1,13 @@
 CREATE TABLE Conversations (
     Convo_num int NOT NULL AUTO_INCREMENT,
     Client_ID varchar(8),
+    WS_Version varchar(16),
     First_name varchar(255),
     Last_name varchar(255),
     Patient_choice int,
     Input_method varchar(8),
     Mic varchar(8),
+    Exp_group varchar(16),
     PRIMARY KEY (Convo_num)
 );
 
