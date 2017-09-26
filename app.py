@@ -196,7 +196,7 @@ def process_vars(line):
             try:
                 varvalue = mvars[varname]
             except KeyError:
-                pdb.set_trace()
+                varvalue = varname
             line = re.sub(" "+re.escape(assignment)+" "," "+varvalue+" ", line)
             # line = line.split("$")[0] #cut at first variable assignment
         return line
@@ -349,11 +349,11 @@ def new_query(convo_num):
             error = True
             print(str(e))
             return ("Error connecting to database", 500)
-
         # IMPORTANT NOTE!!! this (new_qnum) is how uniqueness of query keys is maintained in the DB.
         # I'm sure this is a bad idea somehow, but that's how it's happening now.
         new_qnum = last_qnum + 1 
         inputs = request.get_json()
+        print(inputs)
         ## ask ChatScript
         to_cs = "[ q: " + str(new_qnum) + " ] " + inputs['query']
         cs_init_reply = cs_exchange(usr_first, usr_last, 1, to_cs)
@@ -365,10 +365,11 @@ def new_query(convo_num):
 #                                status = 201,
 #                                mimetype = 'application/json')
 #            return (response)
-
+        print(cs_init_reply)
         why = cs_exchange(usr_first, usr_last, 1, ":why")
         #print(why)
         cs_interp = process_match(why)
+        print(cs_interp)
         if group == 'test':
             if cs_interp != '_*':
                 # NOTE! This is a hack to get around CS limitations; the logistic
