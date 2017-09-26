@@ -28,7 +28,7 @@ from cs_cnn_choose import *
 
 monkey.patch_all()
 
-WS_VERSION = "1.0.0"
+WS_VERSION = "1.0.1"
 CNN_Args = namedtuple('CNN_Args', ['embed_num',
                                    'char_embed_dim',
                                    'word_embed_dim',
