@@ -6,6 +6,8 @@
 config.json
 
 # data files
+test_input
+audio
 models
 w2v
 corrected.csv

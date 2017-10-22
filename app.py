@@ -1,6 +1,7 @@
 from flask import Flask, request, redirect, url_for, Response, abort
 from flask_mysqldb import MySQL
 from flask_cors import CORS
+from werkzeug.utils import secure_filename
 
 import vpcnn.model
 import vpcnn.vpdataset 
@@ -28,7 +29,7 @@ from cs_cnn_choose import *
 
 monkey.patch_all()
 
-WS_VERSION = "1.0.1"
+WS_VERSION = "1.1.0"
 CNN_Args = namedtuple('CNN_Args', ['embed_num',
                                    'char_embed_dim',
                                    'word_embed_dim',
@@ -450,7 +451,89 @@ def new_query(convo_num):
                             mimetype = 'application/json')
 
         return response #redirect(url_for('show_conversation', num=convo_num))
-          
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() == 'zip'
+    
+@app.route("/conversations/<int:convo_num>/query/<int:query_num>/audio", methods=['POST'])
+def add_audio(convo_num, query_num):
+    if request.method == 'POST':
+        status = 400
+        response_dict = {}
+        response_dict['status'] = 'error'
+        response_dict['resource'] = ''
+        response_dict['info'] = 'No file given'
+        headers = {}
+        # check if the post request has the file part
+        if 'file' not in request.files:
+            response_str = json.dumps(response_dict, indent=2) + "\n"
+            return Response(response = response_str,
+                            status = status,
+                            headers = headers,
+                            mimetype = 'application/json')
+        audio = request.files['file']
+        # could get an empty filename if submitted without a selection
+        if audio.filename == '':
+            response_str = json.dumps(response_dict, indent=2) + "\n"
+            return Response(response = response_str,
+                            status = status,
+                            headers = headers,
+                            mimetype = 'application/json')
+        # check if query resource exists and no audio already
+        ret_qnum = ""
+        ret_audpath = ""
+        select_sql = '''SELECT Query_num, Audio_path
+                        FROM Queries
+                        WHERE Convo_num = %s
+                        AND Query_num = %s;'''
+        cursor = db.connection.cursor()
+        try:
+            cursor.execute(select_sql, [str(convo_num), str(query_num)])
+            record = cursor.fetchone()
+            if record:
+                ret_qnum = record[0]
+                ret_audpath = record[1]
+            else:
+                # if we get here, there is no query with that conv/query num.
+                # TODO: could create the resource and wait for the query instead of failing
+                status = 409 # Conflict
+                response_dict['info'] = 'No corresponding query'
+                response_str = json.dumps(response_dict, indent=2) + "\n"
+                return Response(response = response_str,
+                                status = status,
+                                headers = headers,
+                                mimetype = 'application/json')
+        except:
+            return ("Error connecting to database", 500)
+        # print(ret_qnum, ret_audpath)
+        ok_to_add_audio = (ret_qnum != "" and ret_audpath is None)
+        if (not ok_to_add_audio):
+            response_dict['info'] = 'Audio already exists'
+        if audio and allowed_file(audio.filename) and ok_to_add_audio:
+            filename = secure_filename(audio.filename)
+            new_audio_path = os.path.join(conf['service_audio_storage'], filename)
+            audio.save(new_audio_path)
+            ins_sql = ''' UPDATE Queries SET Audio_path = %s
+                          WHERE Convo_num = %s AND Query_num = %s
+                      '''
+            try:
+                cursor.execute(ins_sql, [new_audio_path, str(convo_num), str(query_num)])
+                db.connection.commit()
+            except:
+                db.connection.rollback()
+                
+            status = 201
+            response_dict['status'] = 'ok'
+            response_dict['resource'] = url_for('show_conversation', num=convo_num) + "query/" + str(query_num) + "/audio" ##FIXME (implement GET)
+            response_dict['info'] = ''
+        
+        cursor.close()
+        response_str = json.dumps(response_dict, indent=2) + "\n"
+        return Response(response = response_str,
+                        status = status,
+                        headers = headers,
+                        mimetype = 'application/json')
+    
     
 if __name__ == "__main__":
     if conf['service_key'] is not None:
