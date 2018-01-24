@@ -371,7 +371,7 @@ def new_query(convo_num):
         #print(why)
         cs_interp = process_match(why)
         print(cs_interp)
-        if group == 'test':
+        if group == 'test' and len(inputs['query'].split()) > 2 :
             if cs_interp != '_*':
                 # NOTE! This is a hack to get around CS limitations; the logistic
                 # regression model mostly only uses this feature to know whether or
@@ -453,7 +453,7 @@ def new_query(convo_num):
         return response #redirect(url_for('show_conversation', num=convo_num))
 
 def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() == 'zip'
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ['zip', 'gz', 'wav']
     
 @app.route("/conversations/<int:convo_num>/query/<int:query_num>/audio", methods=['POST'])
 def add_audio(convo_num, query_num):

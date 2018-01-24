@@ -16,5 +16,6 @@
     "service_port":5000,
     "service_key":null,
     "service_cert":null,
-    "service_pipeline":"cs_cnn"
+    "service_pipeline":"cs_cnn",
+    "service_audio_storage":"/path/to/saved/audio"
 }
