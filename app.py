@@ -253,8 +253,8 @@ def conversations():
         ##      error if not json
         ##      error if db fails
         logger.info(request.headers)
+        logger.info(request.data)
         inputs = request.get_json()
-        logger.info(inputs)
         convo_num = -1
         inputs['ws_v'] = WS_VERSION
         if not 'group' in inputs:
