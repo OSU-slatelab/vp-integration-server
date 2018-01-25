@@ -27,6 +27,10 @@ from gevent import signal
 
 from cs_cnn_choose import *
 
+import logging
+from logging.handlers import RotatingFileHandler
+
+
 monkey.patch_all()
 
 WS_VERSION = "1.1.0"
@@ -47,6 +51,15 @@ Predict_Args = namedtuple('Predict_Args', ['ensemble', 'cuda'])
 with open('config.json') as conf_json:
     conf = json.load(conf_json)
 
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+rfh = RotatingFileHandler(conf['log_file'],
+                          maxBytes=100000,
+                          backupCount=2,
+                          encoding="UTF-8")
+logger.addHandler(rfh)
+
 cs_host = conf['cs_host'] 
 cs_port = conf['cs_port'] 
 cs_bufsize = conf['cs_bufsize'] 
@@ -59,7 +72,7 @@ app.config['MYSQL_HOST'] = conf['db_host']
 db = MySQL(app)
 CORS(app)
 
-print("Building vocabularies...")
+logger.info("Building vocabularies...")
 word_tokenizer = data.Pipeline(vpcnn.vpdataset.clean_str)
 char_field = data.Field(lower=True, tokenize=lambda x: list(x))
 word_field = data.Field(lower=True, tokenize=word_tokenizer, batch_first=True)
@@ -98,8 +111,8 @@ word_field.build_vocab(word_train_data[0],
                        wv_dim=None, 
                        wv_dir=None, 
                        min_freq=1)
-print("Done.")
-print("Loading character CNN models...")
+logger.info("Done.")
+logger.info("Loading character CNN models...")
 char_args = CNN_Args(embed_num = len(char_field.vocab),
                      char_embed_dim = 16,
                      word_embed_dim = 300,
@@ -118,8 +131,8 @@ for i in range(len(char_mdl_files)):
     char_mdls.append(vpcnn.model.CNN_Text(char_args, 'char'))
     char_mdls[i].load_state_dict(torch.load(char_mdl_files[i], map_location= lambda stor, loc: stor))
 
-print("Loading word CNN models...")
-print("Vocab size: ", len(word_field.vocab))
+logger.info("Loading word CNN models...")
+logger.info("Vocab size: %d", len(word_field.vocab))
 word_args = CNN_Args(embed_num = len(word_field.vocab), ## (should be 1715)
                      char_embed_dim = 16,
                      word_embed_dim = 300,
@@ -138,12 +151,12 @@ for i in range(len(word_mdl_files)):
     word_mdls.append(vpcnn.model.CNN_Text(word_args, 'word'))
     word_mdls[i].load_state_dict(torch.load(word_mdl_files[i], map_location= lambda stor, loc: stor))
 
-print("Loading word/char binary classifier...")
+logger.info("Loading word/char binary classifier...")
 choose_mdl_path = os.path.join(conf['choose_cnn_dir'], 'final_model.0.pt')
 choose_mdl = vpcnn.model.StackingNet(None)
 choose_mdl.load_state_dict(torch.load(choose_mdl_path, map_location= lambda stor, loc: stor))
     
-print("Done.")
+logger.info("Done.")
 
 decider = CS_CNN_chooser(conf['cs_cnn_classifier'], conf['cs_cnn_vectorizer'])
 
@@ -204,7 +217,7 @@ def process_vars(line):
                                                                                             
 ## TODO? Might make more sense to grab the template name instead of the match
 def process_match(why):
-    #print(why)
+    logger.debug(why)
     match = extract_interp_re.search(why)
     if match:
         raw = match.group(1).strip()
@@ -239,6 +252,7 @@ def conversations():
         ## TODO error handling:
         ##      error if not json
         ##      error if db fails
+        logger.info(request.headers)
         inputs = request.get_json()
         convo_num = -1
         inputs['ws_v'] = WS_VERSION
@@ -348,13 +362,13 @@ def new_query(convo_num):
         except BaseException as e:
             ## TODO: needs work
             error = True
-            print(str(e))
+            logger.error(str(e))
             return ("Error connecting to database", 500)
         # IMPORTANT NOTE!!! this (new_qnum) is how uniqueness of query keys is maintained in the DB.
         # I'm sure this is a bad idea somehow, but that's how it's happening now.
         new_qnum = last_qnum + 1 
         inputs = request.get_json()
-        print(inputs)
+        logger.info(inputs)
         ## ask ChatScript
         to_cs = "[ q: " + str(new_qnum) + " ] " + inputs['query']
         cs_init_reply = cs_exchange(usr_first, usr_last, 1, to_cs)
@@ -366,11 +380,11 @@ def new_query(convo_num):
 #                                status = 201,
 #                                mimetype = 'application/json')
 #            return (response)
-        print(cs_init_reply)
+        logger.info(cs_init_reply)
         why = cs_exchange(usr_first, usr_last, 1, ":why")
         #print(why)
         cs_interp = process_match(why)
-        print(cs_interp)
+        logger.info(cs_interp)
         if group == 'test' and len(inputs['query'].split()) > 2 :
             if cs_interp != '_*':
                 # NOTE! This is a hack to get around CS limitations; the logistic
@@ -540,10 +554,14 @@ if __name__ == "__main__":
         http = WSGIServer((conf['service_host'], conf['service_port']),
                           app.wsgi_app,
                           keyfile=conf['service_key'],
-                          certfile=conf['service_cert'])
+                          certfile=conf['service_cert'],
+                          log = logger,
+                          error_log = logger)
     else:
         http = WSGIServer((conf['service_host'], conf['service_port']),
-                          app.wsgi_app)        
+                          app.wsgi_app,
+                          log = logger,
+                          error_log = logger)        
     try:
         http.serve_forever()
     except KeyboardInterrupt:
