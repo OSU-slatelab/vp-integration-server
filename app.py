@@ -70,6 +70,7 @@ app.config['MYSQL_PASSWORD'] = conf['db_pass']
 app.config['MYSQL_DB'] = conf['db_db']
 app.config['MYSQL_HOST'] = conf['db_host']
 db = MySQL(app)
+app.config['MAX_CONTENT_LENGTH'] = 9999999
 CORS(app)
 
 logger.info("Building vocabularies...")
