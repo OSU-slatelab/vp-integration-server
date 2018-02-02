@@ -8,6 +8,7 @@ CREATE TABLE Conversations (
     Input_method varchar(8),
     Mic varchar(8),
     Exp_group varchar(16),
+    Raw_score TEXT,
     PRIMARY KEY (Convo_num)
 );
 

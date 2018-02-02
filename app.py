@@ -1,4 +1,4 @@
-from flask import Flask, request, redirect, url_for, Response, abort
+from flask import Flask, request, redirect, url_for, Response, abort, render_template
 from flask_mysqldb import MySQL
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
@@ -245,7 +245,10 @@ def cs_exchange(usr_first, usr_last, patient_num, msg):
     cs_sock.close()
     return b''.join(chunks).decode("utf-8")
     
-
+@app.route("/score/", methods=['GET'])
+def show_score():
+    num = request.args.get('convo_num','')
+    return render_template("score.html", num=num)
 
 @app.route("/conversations/", methods=['POST'])
 def conversations():
@@ -313,19 +316,24 @@ def show_conversation(num):
                  WHERE Convo_num = %s'''
     cursor = db.connection.cursor()
     try:
-        cursor.execute(get_sql, str(num))
+        cursor.execute(get_sql, [str(num)])
         record = cursor.fetchone()
         response_dict['num'] = record[0]
         response_dict['client'] = record[1]        
-        response_dict['first'] = record[2]
-        response_dict['last'] = record[3]
-        response_dict['patient'] = record[4]
-        response_dict['input'] = record[5]
-        response_dict['mic'] = record[6]
-        response_dict['group'] = record[7]
-    except:
-        ## TODO: make this better
-        return 404
+        response_dict['webservice_version'] = record[2]
+        response_dict['first'] = record[3]
+        response_dict['last'] = record[4]
+        response_dict['patient'] = record[5]
+        response_dict['input'] = record[6]
+        response_dict['mic'] = record[7]
+        response_dict['group'] = record[8]
+        response_dict['raw_score'] = record[9]
+    except Exception as e:
+        logging.info(e)
+        response = Response(response = '{"error": "not found"}',
+                            status = 404,
+                            mimetype = 'application/json')
+        return response
     cursor.close()
     response_str = json.dumps(response_dict, indent=2)
     response = Response(response = response_str,
@@ -374,15 +382,31 @@ def new_query(convo_num):
         ## ask ChatScript
         to_cs = "[ q: " + str(new_qnum) + " ] " + inputs['query']
         cs_init_reply = cs_exchange(usr_first, usr_last, 1, to_cs)
-#        if "score me" in inputs['query'] and cs_init_reply is not None:
-#            response_dict = {}
-#            response_dict['status'] = 'ok'
-#            response_str = json.dumps(response_dict, indent=2) + "\n"
-#            response = Response(response = response_str,
-#                                status = 201,
-#                                mimetype = 'application/json')
-#            return (response)
         logger.info(cs_init_reply)
+        if "score me" in inputs['query'] and cs_init_reply is not None:
+            score_ins_sql = '''UPDATE Conversations SET Raw_score = %(raw_score)s
+                               WHERE Convo_num = %(convo_num)s'''
+            sql_data = {}
+            sql_data['raw_score'] = cs_init_reply
+            sql_data['convo_num'] = convo_num
+            cursor = db.connection.cursor()
+            try:
+                cursor.execute(score_ins_sql, sql_data)
+                db.connection.commit()
+            except:
+                logging.info("Database error")
+                db.connection.rollback()
+            cursor.close()
+            
+            response_dict = {}
+            response_dict['status'] = 'ok'
+            response_dict['resource'] = url_for('show_conversation', num=convo_num)
+            response_dict['reply'] = ''
+            response_str = json.dumps(response_dict, indent=2) + "\n"
+            response = Response(response = response_str,
+                                status = 201,
+                                mimetype = 'application/json')
+            return (response)
         why = cs_exchange(usr_first, usr_last, 1, ":why")
         #print(why)
         cs_interp = process_match(why)
@@ -474,6 +498,8 @@ def allowed_file(filename):
 @app.route("/conversations/<int:convo_num>/query/<int:query_num>/audio", methods=['POST'])
 def add_audio(convo_num, query_num):
     if request.method == 'POST':
+        logger.info(request.headers)
+#        logger.info(request.data)
         status = 400
         response_dict = {}
         response_dict['status'] = 'error'
