@@ -247,8 +247,24 @@ def cs_exchange(usr_first, usr_last, patient_num, msg):
     
 @app.route("/score/", methods=['GET'])
 def show_score():
-    num = request.args.get('convo_num','')
-    return render_template("score.html", num=num)
+    if 'convo_num' in request.args:
+        num = request.args.get('convo_num','')
+        check_sql = ''' SELECT Convo_num FROM Conversations
+                        WHERE Convo_num = %s '''
+        cursor = db.connection.cursor()
+        check = None
+        try:
+            cursor.execute(check_sql, [num])
+            check = cursor.fetchone()[0]
+        except:
+            db.connection.rollback()
+        cursor.close()
+        if check is not None:
+            return render_template("score.html", num=num)
+        else:
+            abort(404)
+    else:
+        abort(400)
 
 @app.route("/conversations/", methods=['POST'])
 def conversations():
