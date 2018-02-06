@@ -237,21 +237,34 @@ var score = function score(scorejson) {
 	getDate();
 	
 	generatePDF();
-	var pdfdata = doc.output('datauristring'); 	
-	display = document.createElement("object");
+    var pdfdata = doc.output('datauristring'); 	
+/*	display = document.createElement("object");
 	display.style.textAlign = "left"; 
    	display.data = pdfdata;
 	display.innerHTML = generateHTML();
 	display.height = "95%";
 	display.width = "100%";
+*/
+    var link = document.createElement("a");
+    link.download = "Summary";
+    link.href = pdfdata;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    delete link;
+    
+//    var iframe = "<iframe width='100%' height='100%' src='https://docs.google.com/gview?url=" + encodeURI(pdfdata) + "&embedded=true'></iframe>"
 
-	download = document.createElement("input");
+//    document.body.innerHTML = iframe;
+/*	download = document.createElement("input");
 	download.type = "button";
-	download.value = "Download Score .pdf";
-	download.onclick = function() {
-		generatePDF();
-		doc.save(scoredata.name + ".pdf");}
-
+	download.value = "Open Score .pdf";
+        download.onclick = function() {
+	    var x = window.open();
+            x.document.open();
+            x.document.write(iframe);
+            x.document.close();
+	}
 	var expertAnswers = document.createElement("input");
 	expertAnswers.type = "button";
 	expertAnswers.value = "Download Expert Answers";
@@ -261,9 +274,9 @@ var score = function score(scorejson) {
 
 	var placement = document.getElementById("scoreholder");
 	if (placement == null) { placement = document.body;} 
+	placement.appendChild(download);
 	placement.appendChild(expertAnswers);
-	placement.appendChild(display);
-	//placement.appendChild(download);
+*/	//placement.appendChild(display);
 }
 
 /* var getUrlParameter = function getUrlParameter(sParam) {
