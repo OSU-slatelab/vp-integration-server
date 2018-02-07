@@ -244,7 +244,7 @@ var score = function score(scorejson) {
 	display.innerHTML = generateHTML();
 	display.height = "95%";
 	display.width = "100%";
-*/
+
     var link = document.createElement("a");
     link.download = "Summary";
     link.href = pdfdata;
@@ -252,9 +252,10 @@ var score = function score(scorejson) {
     link.click();
     document.body.removeChild(link);
     delete link;
-    
+*/
+    document.location.href = pdfdata;
 //    var iframe = "<iframe width='100%' height='100%' src='https://docs.google.com/gview?url=" + encodeURI(pdfdata) + "&embedded=true'></iframe>"
-
+    
 //    document.body.innerHTML = iframe;
 /*	download = document.createElement("input");
 	download.type = "button";
