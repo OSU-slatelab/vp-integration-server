@@ -287,7 +287,7 @@ def conversations():
             else:
                 abort(500)
             ins_sql = '''INSERT INTO Conversations (Client_ID, WS_Version, First_name, Last_name, Patient_choice, Input_method, Mic, Exp_group)
-                     VALUES (%(client)s, %(ws_v)s, %(first)s, %(last)s, 1, %(input)s, %(mic)s, %(group)s);'''
+                     VALUES (%(client)s, %(ws_v)s, %(first)s, %(last)s, %(patient)s, %(input)s, %(mic)s, %(group)s);'''
         num_sql = '''SELECT LAST_INSERT_ID();'''
         cursor = db.connection.cursor()
         error = False
