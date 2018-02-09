@@ -301,7 +301,7 @@ def conversations():
             error = True
             db.connection.rollback()
         cursor.close()
-        cs_greeting = cs_exchange(inputs['first'], inputs['last'], 1, "")
+        cs_greeting = cs_exchange(inputs['first'], inputs['last'], inputs['patient'], "")
         response_dict = {}
         status = 201
         headers = {}
@@ -370,7 +370,7 @@ def new_query(convo_num):
         usr_last = ""
         last_qnum = 0
         group = ""
-        usr_sql = '''SELECT First_name, Last_name, MAX(Query_num), Exp_group
+        usr_sql = '''SELECT First_name, Last_name, MAX(Query_num), Exp_group, Patient_choice
                      FROM Conversations JOIN Queries
                      ON Conversations.Convo_num = Queries.Convo_num
                      WHERE Conversations.Convo_num = %s;'''
@@ -381,6 +381,7 @@ def new_query(convo_num):
             usr_first = record[0]
             usr_last = record[1]
             group = record[3]
+            patient = record[4]
             if record[2] is not None:
                 last_qnum = int(record[2])
             else:
@@ -397,7 +398,7 @@ def new_query(convo_num):
         logger.info(inputs)
         ## ask ChatScript
         to_cs = "[ q: " + str(new_qnum) + " ] " + inputs['query']
-        cs_init_reply = cs_exchange(usr_first, usr_last, 1, to_cs)
+        cs_init_reply = cs_exchange(usr_first, usr_last, patient, to_cs)
         logger.info(cs_init_reply)
         if "score me" in inputs['query'] and cs_init_reply is not None:
             score_ins_sql = '''UPDATE Conversations SET Raw_score = %(raw_score)s
@@ -423,7 +424,7 @@ def new_query(convo_num):
                                 status = 201,
                                 mimetype = 'application/json')
             return (response)
-        why = cs_exchange(usr_first, usr_last, 1, ":why")
+        why = cs_exchange(usr_first, usr_last, patient, ":why")
         #print(why)
         cs_interp = process_match(why)
         logger.info(cs_interp)
@@ -455,7 +456,7 @@ def new_query(convo_num):
             cs_re_reply = "NULL"
             if use_cnn:
                 new_query = "[ q: " + str(new_qnum) + " ] " + cnn_interp
-                cs_re_reply = cs_exchange(usr_first, usr_last, 1, new_query)
+                cs_re_reply = cs_exchange(usr_first, usr_last, patient, new_query)
                 reply = cs_re_reply
             else:
                 reply = cs_init_reply

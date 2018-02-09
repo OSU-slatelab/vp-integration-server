@@ -82,8 +82,8 @@ function generateHTML() {
 	+ "<p>Scorecard for " + scoredata.name + "</p>";
 	for (i = 0; i < scoredata.sections.length; i++) {
 		section = scoredata.sections[i];
-		content += "<p><strong style=\"margin-left:10px\">"
-		 	+ section.name + "</strong></p>";
+		content += "<h2><strong style=\"margin-left:10px\">"
+		 	+ section.name + "</strong></h2>";
 		for (j = 0; j < section.categories.length; j++) {
 			category = section.categories[j];
 			content += "<strong style=\"margin-left:20px\">"
@@ -102,30 +102,32 @@ function generateHTML() {
 	}
 	content += "<p style=\"margin-left:20px\">"
 		+ "<b>Total questions asked:  " 
-		+ scoredata["total questions"]
-		+ "<br>Open Questions:  " + scoredata["open questions"]
-		+ "<br>Open Question Percent: "
-	 	+ scoredata["open question percent"]
-		+ "<br>Open in first 5:  "
-		+ scoredata["open in first 5"]
-		+ "<br>Open in first 10:  "
-		+ scoredata["open in first 10"]
-		+ "<br>Open in first 15:  "
-		+ scoredata["open in first 15"]
-		+ "<br>Closed questions:  "
-		+ scoredata["closed questions"]
-		+ "<br>Closed Question Percent:  "
-		+ scoredata["closed question percent"]
-		+ "<br>Open/Closed Ratio:  "
-		+ scoredata["open/closed ratio"]
-		+ "<br><br>Summarizing Questions:</b></p>"
-		+ "<div style=\"margin-left:40px\">"
-	for (i = 0; i < scoredata["summarizing questions"].length; i++) {
-		content += scoredata["summarizing questions"][i] + "<br>";
-	}
-	content += "</div><strong style=\"margin-left:20px\">"
+	        + scoredata["total questions"]
+                + "</b></p>";
+//		+ "<br>Open Questions:  " + scoredata["open questions"]
+//		+ "<br>Open Question Percent: "
+//	 	+ scoredata["open question percent"]
+//		+ "<br>Open in first 5:  "
+//		+ scoredata["open in first 5"]
+//		+ "<br>Open in first 10:  "
+//		+ scoredata["open in first 10"]
+//		+ "<br>Open in first 15:  "
+//		+ scoredata["open in first 15"]
+//		+ "<br>Closed questions:  "
+//		+ scoredata["closed questions"]
+//		+ "<br>Closed Question Percent:  "
+//		+ scoredata["closed question percent"]
+//		+ "<br>Open/Closed Ratio:  "
+//		+ scoredata["open/closed ratio"]
+//		+ "<br><br>Summarizing Questions:</b></p>"
+//		+ "<div style=\"margin-left:40px\">"
+//	for (i = 0; i < scoredata["summarizing questions"].length; i++) {
+//		content += scoredata["summarizing questions"][i] + "<br>";
+    //	}
+//      content += "</div>";
+	content += "<strong style=\"margin-left:20px\">"
 		+ "All Questions Asked:</strong>"
-		+ "<div style=\"margin-left:40px\">"
+	        + "<div style=\"margin-left:40px\">";
 	for (i = 0; i < scoredata.transcript.length; i++) {
 		content += scoredata.transcript[i] + "<br>";
 	}
@@ -236,16 +238,16 @@ var score = function score(scorejson) {
 	scoredata = fixJSON(scorejson);
 	getDate();
 	
-	generatePDF();
-    var pdfdata = doc.output('datauristring'); 	
-/*	display = document.createElement("object");
+//	generatePDF();
+//    var pdfdata = doc.output('datauristring'); 	
+	display = document.createElement("div");
 	display.style.textAlign = "left"; 
-   	display.data = pdfdata;
+//   	display.data = pdfdata;
 	display.innerHTML = generateHTML();
 	display.height = "95%";
 	display.width = "100%";
 
-    var link = document.createElement("a");
+/*    var link = document.createElement("a");
     link.download = "Summary";
     link.href = pdfdata;
     document.body.appendChild(link);
@@ -253,8 +255,8 @@ var score = function score(scorejson) {
     document.body.removeChild(link);
     delete link;
 */
-    document.location.href = pdfdata;
-//    var iframe = "<iframe width='100%' height='100%' src='https://docs.google.com/gview?url=" + encodeURI(pdfdata) + "&embedded=true'></iframe>"
+//    document.location.href = pdfdata;
+//    var iframe = "<iframe width='100%' height='100%' src='https://docs.google.com/gview?url=" + pdfdata + "&embedded=true'></iframe>"
     
 //    document.body.innerHTML = iframe;
 /*	download = document.createElement("input");
@@ -272,12 +274,12 @@ var score = function score(scorejson) {
 	expertAnswers.onclick = function() {
 		window.open("http://128.146.170.201/Downloads/ExpertAnswers.pdf");
 	}
-
+*/
 	var placement = document.getElementById("scoreholder");
 	if (placement == null) { placement = document.body;} 
-	placement.appendChild(download);
-	placement.appendChild(expertAnswers);
-*/	//placement.appendChild(display);
+//	placement.appendChild(download);
+//	placement.appendChild(expertAnswers);
+	placement.appendChild(display);
 }
 
 /* var getUrlParameter = function getUrlParameter(sParam) {
