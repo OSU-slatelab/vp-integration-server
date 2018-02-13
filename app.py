@@ -34,7 +34,7 @@ from logging.handlers import RotatingFileHandler
 
 monkey.patch_all()
 
-WS_VERSION = "1.1.0"
+WS_VERSION = "1.2.0"
 CNN_Args = namedtuple('CNN_Args', ['embed_num',
                                    'char_embed_dim',
                                    'word_embed_dim',
@@ -283,9 +283,9 @@ def conversations():
         logger.info(request.data)
         inputs = request.get_json()
         convo_num = -1
-        uuid = str(uuid.uuid4())
+        convo_uuid = str(uuid.uuid4())
         inputs['ws_v'] = WS_VERSION
-        inputs['uuid'] = uuid
+        inputs['uuid'] = convo_uuid
         if not 'group' in inputs:
             if conf['service_pipeline'] == 'cs_only':
                 inputs['group'] = 'control'
@@ -320,7 +320,7 @@ def conversations():
             response_dict['resource'] = url_for('show_conversation', num=convo_num)
             response_dict['conversation_num'] = convo_num
             response_dict['greeting'] = cs_greeting
-            response_dict['uuid'] = uuid 
+            response_dict['uuid'] = convo_uuid 
         else:
             status = 500
             response_dict['status'] = 'error'
