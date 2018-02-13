@@ -18,6 +18,7 @@ import os
 import pkg_resources
 import re
 import random
+import uuid
 from math import log10
 from scipy.stats import entropy
 
@@ -247,19 +248,25 @@ def cs_exchange(usr_first, usr_last, patient_num, msg):
     
 @app.route("/score/", methods=['GET'])
 def show_score():
-    if 'convo_num' in request.args:
+    if 'convo_num' in request.args and 'secret' in request.args:
         num = request.args.get('convo_num','')
-        check_sql = ''' SELECT Convo_num FROM Conversations
+        secret = request.args.get('secret','')
+        check_sql = ''' SELECT Convo_num, Uuid FROM Conversations
                         WHERE Convo_num = %s '''
         cursor = db.connection.cursor()
-        check = None
+        check_num = None
+        check_secret = None
         try:
             cursor.execute(check_sql, [num])
-            check = cursor.fetchone()[0]
+            record = cursor.fetchone()
+            check_num = record[0]
+            check_secret = record[1]
         except:
             db.connection.rollback()
         cursor.close()
-        if check is not None:
+        if (check_num is not None 
+            and check_secret is not None 
+            and check_secret == secret):
             return render_template("score.html", num=num)
         else:
             abort(404)
@@ -276,7 +283,9 @@ def conversations():
         logger.info(request.data)
         inputs = request.get_json()
         convo_num = -1
+        uuid = str(uuid.uuid4())
         inputs['ws_v'] = WS_VERSION
+        inputs['uuid'] = uuid
         if not 'group' in inputs:
             if conf['service_pipeline'] == 'cs_only':
                 inputs['group'] = 'control'
@@ -286,8 +295,8 @@ def conversations():
                 inputs['group'] = 'control' if random.random() < 0.5 else 'test'
             else:
                 abort(500)
-            ins_sql = '''INSERT INTO Conversations (Client_ID, WS_Version, First_name, Last_name, Patient_choice, Input_method, Mic, Exp_group)
-                     VALUES (%(client)s, %(ws_v)s, %(first)s, %(last)s, %(patient)s, %(input)s, %(mic)s, %(group)s);'''
+            ins_sql = '''INSERT INTO Conversations (Client_ID, WS_Version, First_name, Last_name, Patient_choice, Input_method, Mic, Exp_group, Uuid)
+                     VALUES (%(client)s, %(ws_v)s, %(first)s, %(last)s, %(patient)s, %(input)s, %(mic)s, %(group)s, %(uuid)s);'''
         num_sql = '''SELECT LAST_INSERT_ID();'''
         cursor = db.connection.cursor()
         error = False
@@ -311,12 +320,14 @@ def conversations():
             response_dict['resource'] = url_for('show_conversation', num=convo_num)
             response_dict['conversation_num'] = convo_num
             response_dict['greeting'] = cs_greeting
+            response_dict['uuid'] = uuid 
         else:
             status = 500
             response_dict['status'] = 'error'
             response_dict['resource'] = ''
             response_dict['conversation_num'] = ''
             response_dict['greeting'] = ''
+            response_dict['uuid'] = ''
 
         response_str = json.dumps(response_dict, indent=2) + "\n"
         response = Response(response = response_str,
