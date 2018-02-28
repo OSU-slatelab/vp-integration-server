@@ -77,7 +77,7 @@ function replaceAll(find, replace, str) {
 returns the html text to display the score data
 */
 function generateHTML() {
-	var content = "<div style=\"border: 5px solid blue\">" //\"white-space:nowrap\">"
+	var content = "<div style=\"border: 5px solid blue;\">" //\"white-space:nowrap\">"
 	//+ "overflow-y:scroll;\""
 	+ "<p>Scorecard for " + scoredata.name + "</p>";
 	for (i = 0; i < scoredata.sections.length; i++) {
