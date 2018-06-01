@@ -9,6 +9,7 @@ CREATE TABLE Conversations (
     Mic varchar(8),
     Exp_group varchar(16),
     Raw_score TEXT,
+    Uuid varchar(40),
     PRIMARY KEY (Convo_num)
 );
 
