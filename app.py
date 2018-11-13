@@ -217,7 +217,7 @@ def process_vars(line):
             # line = line.split("$")[0] #cut at first variable assignment
         return line
                                                                                             
-## TODO? Might make more sense to grab the template name instead of the match
+## TODO!! Might make more sense to grab the template name instead of the match
 def process_match(why):
     logger.debug(why)
     match = extract_interp_re.search(why)
@@ -245,7 +245,29 @@ def cs_exchange(usr_first, usr_last, patient_num, msg):
         chunks.append(reply)
     cs_sock.close()
     return b''.join(chunks).decode("utf-8")
-    
+
+@app.route("/config/", methods=['GET'])
+def show_client_config():
+    if 'client' in request.args and 'setup' in request.args:
+        client_type = request.args.get('client','')
+        setup = request.args.get('setup','')
+        response_dict = {}
+        # anticipated: ['watson-tts', 'google-tts', 'rec-embed', 'rec-service']
+        response_dict['speaker'] = 'watson-tts'
+        response_dict['patient'] = 2
+        response_dict['avatar'] = 'wilkins'
+        if (client_type == 'iOS' and setup == 'default'):
+            pass
+        elif (client_type == 'iOS' and setup == 'test'):
+            response_dict['speaker'] = 'rec-embed'
+        response_str = json.dumps(response_dict, indent=2)
+        response = Response(response = response_str,
+                            status = 200,
+                            mimetype = 'application/json')
+        return response
+    else:
+        abort(400)
+
 @app.route("/score/", methods=['GET'])
 def show_score():
     if 'convo_num' in request.args and 'secret' in request.args:
