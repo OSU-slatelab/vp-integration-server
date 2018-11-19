@@ -259,7 +259,7 @@ def show_client_config():
         if (client_type == 'iOS' and setup == 'default'):
             pass
         elif (client_type == 'iOS' and setup == 'test'):
-            response_dict['speaker'] = 'rec-embed'
+            response_dict['speaker'] = 'rec-service'
         response_str = json.dumps(response_dict, indent=2)
         response = Response(response = response_str,
                             status = 200,
