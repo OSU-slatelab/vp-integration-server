@@ -244,7 +244,7 @@ def cs_exchange(usr_first, usr_last, patient_num, msg):
         reply = cs_sock.recv(cs_bufsize)
         chunks.append(reply)
     cs_sock.close()
-    return b''.join(chunks).decode("utf-8").decode("unicode_escape").strip('"')
+    return b''.join(chunks).decode("utf-8")
 
 @app.route("/config/", methods=['GET'])
 def show_client_config():
