@@ -256,6 +256,7 @@ def show_client_config():
         response_dict['speaker'] = 'watson-tts'
         response_dict['patient'] = 2
         response_dict['avatar'] = 'wilkins'
+        response_dict['oobhack'] = True;
         if (client_type == 'iOS' and setup == 'default'):
             pass
         elif (client_type == 'iOS' and setup == 'test'):
