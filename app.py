@@ -253,14 +253,14 @@ def show_client_config():
         setup = request.args.get('setup','')
         response_dict = {}
         # anticipated: ['watson-tts', 'google-tts', 'rec-embed', 'rec-service']
-        response_dict['speaker'] = 'watson-tts'
+        response_dict['speaker'] = 'rec-service'
         response_dict['patient'] = 21
-        response_dict['avatar'] = 'wilkins'
+        response_dict['avatar'] = 'martinez'
         response_dict['oobhack'] = True;
         if (client_type == 'iOS' and setup == 'default'):
             pass
         elif (client_type == 'iOS' and setup == 'test'):
-            response_dict['speaker'] = 'rec-service'
+            response_dict['speaker'] = 'watson-tts'
         response_str = json.dumps(response_dict, indent=2)
         response = Response(response = response_str,
                             status = 200,
