@@ -79,7 +79,8 @@ returns the html text to display the score data
 function generateHTML() {
 	var content = "<div style=\"border: 5px solid blue;\">" //\"white-space:nowrap\">"
 	//+ "overflow-y:scroll;\""
-	+ "<p>Scorecard for " + scoredata.name + "</p>";
+	+ "<p>Scorecard for " + scoredata.name + "</p>"
+	+ "<p> Note! Bookmark, save, or print this page if you want to view it later! </p>";
 	for (i = 0; i < scoredata.sections.length; i++) {
 		section = scoredata.sections[i];
 		content += "<h2><strong style=\"margin-left:10px\">"

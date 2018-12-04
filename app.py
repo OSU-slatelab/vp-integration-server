@@ -34,7 +34,7 @@ from logging.handlers import RotatingFileHandler
 
 monkey.patch_all()
 
-WS_VERSION = "1.2.0"
+WS_VERSION = "1.3.0"
 CNN_Args = namedtuple('CNN_Args', ['embed_num',
                                    'char_embed_dim',
                                    'word_embed_dim',
@@ -89,7 +89,7 @@ with open(label_map_fn) as f:
         idx_to_lbl.insert(int(lbl), text)
         lbl_to_idx[text] = int(lbl)
 
-extract_interp_re = re.compile(r'[us\?]:\s+\S+\s+\((.*?)\)')
+extract_interp_re = re.compile(r'[us\?]:\s+(\S+)\s+\(.*?\)')
         
 char_train_data, char_dev_data, char_test_data = vpcnn.vpdataset.VP.splits(char_field,
                                                                            label_field,
@@ -222,9 +222,9 @@ def process_match(why):
     logger.debug(why)
     match = extract_interp_re.search(why)
     if match:
-        raw = match.group(1).strip()
-        processed = process_vars(raw)
-        return processed
+        template_name = match.group(1).strip()
+        # processed = process_vars(raw)
+        return template_name
     else:
         return "!!did not extract template!!"
     
