@@ -57,7 +57,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 rfh = RotatingFileHandler(conf['log_file'],
                           maxBytes=100000,
-                          backupCount=2,
+                          backupCount=10,
                           encoding="UTF-8")
 logger.addHandler(rfh)
 
@@ -89,7 +89,7 @@ with open(label_map_fn) as f:
         idx_to_lbl.insert(int(lbl), text)
         lbl_to_idx[text] = int(lbl)
 
-extract_interp_re = re.compile(r'[us\?]:\s+(\S+)\s+\(.*?\)')
+#extract_interp_re = re.compile(r'[us\?]:\s+(\S+)\s+\(.*?\)')
         
 char_train_data, char_dev_data, char_test_data = vpcnn.vpdataset.VP.splits(char_field,
                                                                            label_field,
@@ -217,12 +217,14 @@ def process_vars(line):
             # line = line.split("$")[0] #cut at first variable assignment
         return line
                                                                                             
-## TODO!! Might make more sense to grab the template name instead of the match
 def process_match(why):
     logger.debug(why)
-    match = extract_interp_re.search(why)
-    if match:
-        template_name = match.group(1).strip()
+    # match = extract_interp_re.search(why)
+    left, right = why.split(":", 1)
+    template_name = right.split("(",1)[0].strip()
+    #if match:
+    if template_name != "":
+        # template_name = match.group(1).strip()
         # processed = process_vars(raw)
         return template_name
     else:
@@ -255,12 +257,18 @@ def show_client_config():
         # anticipated: ['watson-tts', 'google-tts', 'rec-embed', 'rec-service']
         response_dict['speaker'] = 'rec-service'
         response_dict['patient'] = 21
-        response_dict['avatar'] = 'martinez'
+        # anticipated: ['michael', 'michaelV3'] (if watson-tts) default: michaelV3
+        #          or: ['vlad', 'michaelV3'] (if rec-service) default: vlad
+        response_dict['avatar'] = 'vlad'
         response_dict['oobhack'] = True;
         if (client_type == 'iOS' and setup == 'default'):
             pass
         elif (client_type == 'iOS' and setup == 'test'):
             response_dict['speaker'] = 'watson-tts'
+            response_dict['avatar'] = 'michaelV3'
+        elif (client_type == 'iOS' and setup == 'test2'):
+            response_dict['speaker'] = 'watson-tts'
+            response_dict['avatar'] = 'michael'
         response_str = json.dumps(response_dict, indent=2)
         response = Response(response = response_str,
                             status = 200,

@@ -4,6 +4,11 @@
 
 # Sensitive credentials
 config.json
+vpws.service
+.keys
+
+#environment
+.env
 
 # data files
 test_input
@@ -12,6 +17,7 @@ models
 w2v
 corrected.csv
 log
+ancillary_data
 
 # python junk
 
