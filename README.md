@@ -1,8 +1,8 @@
 # Virtual Patient Integration Server
 
 This project implements a simple web service that integrates machine learning-based
-dialog responses from [https://github.com/OSU-slatelab/vp-cnn](a text CNN) and rule-
-based responses from [https://github.com/OSU-slatelab/vp-chatscript](a ChatScript)
+dialog responses from [a text CNN](https://github.com/OSU-slatelab/vp-cnn) and rule-
+based responses from [a ChatScript](https://github.com/OSU-slatelab/vp-chatscript)
 instance.
 
 ## Dependencies
