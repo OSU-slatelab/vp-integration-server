@@ -256,7 +256,7 @@ def show_client_config():
         response_dict = {}
         # anticipated: ['watson-tts', 'google-tts', 'rec-embed', 'rec-service']
         response_dict['speaker'] = 'rec-service'
-        response_dict['patient'] = '21'
+        response_dict['patient'] = 21
         # anticipated: ['michael', 'michaelV3'] (if watson-tts) default: michaelV3
         #          or: ['vlad', 'michaelV3'] (if rec-service) default: vlad
         response_dict['avatar'] = 'vlad'
@@ -265,7 +265,7 @@ def show_client_config():
             pass
         elif (client_type == 'iOS' and setup == 'lep'):
             response_dict['speaker'] = 'rec-service'
-            response_dict['patient'] = '21LEP'
+            response_dict['patient'] = 22
             response_dict['avatar'] = 'vlad'
         elif (client_type == 'iOS' and setup == 'test'):
             response_dict['speaker'] = 'watson-tts'
