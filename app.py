@@ -265,7 +265,7 @@ def show_client_config():
             pass
         elif (client_type == 'iOS' and setup == 'lep'):
             response_dict['speaker'] = 'rec-service'
-            response_dict['patient'] = 22
+            response_dict['patient'] = 210
             response_dict['avatar'] = 'vlad'
         elif (client_type == 'iOS' and setup == 'test'):
             response_dict['speaker'] = 'watson-tts'
